@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고성능 비즈니스 계산기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+        }
+        .calc-button {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .calc-button:active {
+            transform: scale(0.95);
+        }
+        .glass-effect {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- 대시보드 레이아웃 -->
+    <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- 메인 계산기 섹션 -->
+        <div class="md:col-span-2 glass-effect rounded-3xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-microchip text-sky-400"></i> 
+                    양자 논리 계산기
+                </h1>
+                <span class="text-xs bg-sky-500/20 text-sky-400 px-2 py-1 rounded">V 2.5 FLASH PRO</span>
+            </div>
+
+            <!-- 디스플레이 -->
+            <div class="bg-black/40 rounded-2xl p-6 mb-6 text-right overflow-hidden border border-white/5">
+                <div id="history-display" class="text-gray-500 text-sm h-6 mb-1 truncate"></div>
+                <div id="current-display" class="text-4xl font-mono font-bold truncate neon-text">0</div>
+            </div>
+
+            <!-- 버튼 그리드 -->
+            <div class="grid grid-cols-4 gap-3">
+                <!-- 기능키 -->
+                <button onclick="clearDisplay()" class="calc-button bg-rose-500/20 text-rose-400 p-4 rounded-xl font-bold hover:bg-rose-500/30">C</button>
+                <button onclick="deleteLast()" class="calc-button bg-slate-700 text-slate-300 p-4 rounded-xl font-bold hover:bg-slate-600"><i class="fas fa-backspace"></i></button>
+                <button onclick="appendOperator('%')" class="calc-button bg-slate-700 text-slate-300 p-4 rounded-xl font-bold hover:bg-slate-600">%</button>
+                <button onclick="appendOperator('/')" class="calc-button bg-sky-500/20 text-sky-400 p-4 rounded-xl font-bold hover:bg-sky-500/30">÷</button>
+
+                <!-- 숫자 및 연산자 -->
+                <button onclick="appendNumber('7')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">7</button>
+                <button onclick="appendNumber('8')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">8</button>
+                <button onclick="appendNumber('9')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">9</button>
+                <button onclick="appendOperator('*')" class="calc-button bg-sky-500/20 text-sky-400 p-4 rounded-xl font-bold hover:bg-sky-500/30">×</button>
+
+                <button onclick="appendNumber('4')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">4</button>
+                <button onclick="appendNumber('5')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">5</button>
+                <button onclick="appendNumber('6')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">6</button>
+                <button onclick="appendOperator('-')" class="calc-button bg-sky-500/20 text-sky-400 p-4 rounded-xl font-bold hover:bg-sky-500/30">−</button>
+
+                <button onclick="appendNumber('1')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">1</button>
+                <button onclick="appendNumber('2')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">2</button>
+                <button onclick="appendNumber('3')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">3</button>
+                <button onclick="appendOperator('+')" class="calc-button bg-sky-500/20 text-sky-400 p-4 rounded-xl font-bold hover:bg-sky-500/30">+</button>
+
+                <button onclick="appendNumber('0')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl col-span-2 hover:bg-slate-700">0</button>
+                <button onclick="appendNumber('.')" class="calc-button bg-slate-800 text-white p-4 rounded-xl text-xl hover:bg-slate-700">.</button>
+                <button onclick="calculate()" class="calc-button bg-sky-500 text-white p-4 rounded-xl font-bold hover:bg-sky-400 shadow-lg shadow-sky-500/20">=</button>
+            </div>
+        </div>
+
+        <!-- 사이드 대시보드 (기록 및 인사이트) -->
+        <div class="flex flex-col gap-6">
+            <div class="glass-effect rounded-3xl p-5 flex-1 overflow-hidden flex flex-col">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fas fa-history"></i> 연산 로그
+                </h2>
+                <div id="log-list" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                    <p class="text-xs text-slate-500 italic text-center mt-10">아직 데이터가 없습니다.</p>
+                </div>
+                <button onclick="clearLogs()" class="mt-4 text-xs text-rose-400 hover:text-rose-300 transition">기록 모두 삭제</button>
+            </div>
+
+            <!-- 부의 전략 카드 -->
+            <div class="bg-gradient-to-br from-amber-500/20 to-orange-600/20 border border-amber-500/30 rounded-3xl p-5">
+                <h3 class="text-amber-400 font-bold text-sm mb-2"><i class="fas fa-crown mr-1"></i> TOP 100 부의 철학</h3>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    최상위 부자들은 소수점 넷째 자리까지의 오차도 허용하지 않습니다. <strong>정확한 데이터</strong>는 곧 <strong>확신 있는 투자</strong>로 이어집니다. 당신의 경력을 이 도구로 수치화하세요.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetScreen = false;
+
+        const currentDisplay = document.getElementById('current-display');
+        const historyDisplay = document.getElementById('history-display');
+        const logList = document.getElementById('log-list');
+
+        function updateDisplay() {
+            currentDisplay.innerText = currentInput;
+        }
+
+        function appendNumber(number) {
+            if (currentInput === '0' || shouldResetScreen) {
+                currentInput = number;
+                shouldResetScreen = false;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operator !== null) calculate();
+            previousInput = currentInput;
+            operator = op;
+            historyDisplay.innerText = `${previousInput} ${getOpSymbol(op)}`;
+            shouldResetScreen = true;
+        }
+
+        function getOpSymbol(op) {
+            const symbols = { '+': '+', '-': '-', '*': '×', '/': '÷', '%': '%' };
+            return symbols[op] || op;
+        }
+
+        function calculate() {
+            if (operator === null || shouldResetScreen) return;
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            switch (operator) {
+                case '+': result = prev + current; break;
+                case '-': result = prev - current; break;
+                case '*': result = prev * current; break;
+                case '/': 
+                    if (current === 0) {
+                        showError("오류: 0으로 나눌 수 없음");
+                        return;
+                    }
+                    result = prev / current; 
+                    break;
+                case '%': result = prev % current; break;
+                default: return;
+            }
+
+            const expression = `${previousInput} ${getOpSymbol(operator)} ${currentInput}`;
+            addLog(expression, result);
+
+            currentInput = result.toString();
+            operator = null;
+            historyDisplay.innerText = '';
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            historyDisplay.innerText = '';
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function addLog(exp, res) {
+            if (logList.querySelector('p.italic')) logList.innerHTML = '';
+            
+            const logItem = document.createElement('div');
+            logItem.className = 'bg-white/5 p-3 rounded-xl border border-white/5 animate-fade-in';
+            logItem.innerHTML = `
+                <div class="text-[10px] text-slate-500">${exp}</div>
+                <div class="text-sm font-bold text-sky-400">= ${res}</div>
+            `;
+            logList.prepend(logItem);
+        }
+
+        function clearLogs() {
+            logList.innerHTML = '<p class="text-xs text-slate-500 italic text-center mt-10">아직 데이터가 없습니다.</p>';
+        }
+
+        function showError(msg) {
+            currentDisplay.innerText = "Error";
+            setTimeout(clearDisplay, 1500);
+        }
+
+        // 키보드 지원
+        window.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            if (e.key === '.') appendNumber('.');
+            if (e.key === '=' || e.key === 'Enter') calculate();
+            if (e.key === 'Backspace') deleteLast();
+            if (e.key === 'Escape') clearDisplay();
+            if (['+', '-', '*', '/', '%'].includes(e.key)) appendOperator(e.key);
+        });
+    </script>
+</body>
+</html>
